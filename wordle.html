@@ -34,10 +34,6 @@
         this.letterAccuracy = ['-','-','-','-','-'];
         //List of Incorrect Letters
         this.wrongLetters = [];
-        // //Letters that the player used that are in the word but not in the right place;
-        // this.closeLetters = [];
-        // //Letters that the player used in the correct place
-        // this.correctLetters = [];
       }
       /**
        * Generate a random Word
@@ -143,28 +139,6 @@
             this.wrongLetters.push(triedWord[i]);
           }
         }
-        // for(let i = 0; i < trueWord.length; i++){
-        //   var letterCorrect = false;
-        //   var letterClose = false;
-        //   //If Correct Spot
-        //   if(triedWord[i] == trueWord[i]){
-        //     this.letterAccuracy[i] = "correct";
-        //     trueWord[i] = "0";
-        //     letterCorrect = true;
-        //   }
-        //   for(let j = 0; j < trueWord.length; j++){
-        //     //If not the same spot, but another spot:
-        //     if(j != i && triedWord[i] == trueWord[j]){
-        //       this.letterAccuracy[i] = "close";
-        //       trueWord[j] = 0;
-        //       letterClose = true;
-        //     }
-        //   }
-        //   if(!letterClose && !letterCorrect){
-        //     this.letterAccuracy[i] = "wrong";
-        //     this.wrongLetters.push(triedWord[i]);
-        //   }
-        // }
       }
       /**
        * Set Attempt
@@ -188,8 +162,6 @@
           }
           var HTML_currentTile = document.getElementById("a"+this.attempt+"l0");
           selectTile(HTML_currentTile);
-          // HTML_currentTile.classList.add("selected");
-          // selected_tile = HTML_currentTile.id;
         }
         // Create a New Word for the Attempt
         this.attemptWord = new Word(WORD_LENGTH);
@@ -226,7 +198,6 @@
           this.arr[i] = '-';
         }
         this.str = "\\NULL\\";
-        // this.isWord = false;
         this.definition = {};
       }
       setLetter(letter, pos){
@@ -298,7 +269,6 @@
       createBoard(WORD_LENGTH, WORD_ATTEMPTS);
       createKeyboard();
       five_letter_words =  JSON.parse(await readWordListFile());
-      // console.log(five_letter_words[3]);
       //Test Word
       // testWords();
       createNewRound();
@@ -353,8 +323,6 @@
     
     function createBoard(x, y){
       HTML_board = document.querySelector(".board");
-      // h = height (y)
-      // w = width  (x)
       let board_string = "";
       for (let h = 0; h < y; h++){
         board_string += "<div class='word-row row-attempt_"+h+"'>";
@@ -518,7 +486,6 @@
       var letterPos = selected_tile.charAt(3);
       if(parseInt(letterPos) < WORD_LENGTH - 1){
         var nextTile = "a"+ round.attempt +"l"+ ++letterPos;
-        //console.log("POS: " + letterPos + " TILE: " + nextTile);
         var HTML_nextTile = document.getElementById(nextTile);
         selectTile(HTML_nextTile);
       }
@@ -537,7 +504,6 @@
         HTML_tile.classList.add("selected");
 
         selected_tile = HTML_tile.id;
-        //console.log(selected_tile);
       }
     }
 
@@ -646,91 +612,6 @@
     }
 
 
-
-
-
-
-    // async function createGuessWord(){
-
-    //   var randomWord = new Word(5);
-    //   //Keep Generating words until one is found with 5 letters
-    //   foundWord = false;
-    //   while(!foundWord){
-    //     let word = "";
-    //     await getRandomWord(word);
-
-    //     console.log(word);
-    //     if(word.length == 5){
-
-    //     }
-    //   }
-    // }
-
-    // async function getRandomWord(){
-    //   req = fetch("https://random-word-api.herokuapp.com/word?number=1")
-    //     .then(res => res.text())
-    //     .then(data =>{
-    //       console.log(data);
-    //     })
-    //   return req;
-    // }
-
-    
-
-
-    //Function for doing tests on Word Objects
-    // async function testWords(){
-    //   test1 = new Word(WORD_LENGTH);
-    //   test1.setWord('Spare');
-
-    //   test2 = new Word(WORD_LENGTH);
-    //   test2.setLetter('A',1);
-
-    //   console.log(test1.show());
-    //   console.log(test2.show());
-
-    //   let isWord = [];
-    //   isWord[0] = await checkWord(test1);
-    //   isWord[1] = await checkWord(test2);
-
-    //   isWord.forEach(function(c){
-    //     if (c){
-    //       console.log("REAL WORD");
-    //     }
-    //     else{
-    //       console.log("FAKE WORD");
-    //     }
-    //   })
-      
-    //   // return new Promise(function(success, fail) {
-    //   //   if( checkWord(word)){
-    //   //     console.log("REAL WORD");
-    //   //   }
-    //   //   else{
-    //   //     console.log("FAKE WORD");
-    //   //   }
-    //   // });
-    // }
-
-    // async function checkWord(word){
-    //   var req = new XMLHttpRequest();
-    //   req.open("GET","https://api.dictionaryapi.dev/api/v2/entries/en/" + word.str);
-    //   req.onreadystatechange = function(){
-    //     if (req.readyState == 4){
-    //       console.log(req);
-    //       if (req.status == 404){
-    //         console.log("NOT A WORD");
-    //         return false;
-    //       }
-    //       else {
-    //         return true;
-    //       }
-    //     }
-    //   }
-    //   req.send();
-    // }
-
-
       /*******************************
        *      Helper Functions       *
        *******************************/
@@ -775,7 +656,8 @@
     <div class="board"></div>
     <div class="keyboard"></div>
     <div class="DEBUG">Debug</div>
-  </div>
+    <div class="definition"></div>
+  </div> 
 
 </body>
 </html>
