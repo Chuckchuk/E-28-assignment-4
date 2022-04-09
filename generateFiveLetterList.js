@@ -3,7 +3,7 @@
 const fiveLetterWords = require('./five_letter_words.json');
 
 
-//generateFiveWordList();
+generateFiveWordList();
 readRandomWord();
 function readRandomWord(){
   console.log(fiveLetterWords[1]); 
@@ -30,8 +30,10 @@ async function generateFiveWordList() {
 
     for(var key in words){ 
         if(key.toString().length == 5){
+          //I also removed plural words
+          if(key.toString().charAt(4) != "s"){
           keptWords.push(key);
-          // console.log(key);
+          }
         }
     }
   });
