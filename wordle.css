@@ -1,4 +1,11 @@
 
+div.definition {
+  z-index: 1;
+  position:fixed;
+  width:30%;
+  height: 80%;
+  top: 0px;
+}
 
 .DEBUG {
   cursor: pointer;
@@ -51,6 +58,7 @@
 }
 
 .board {
+  z-index: 2;
   position:relative;
   margin:auto;
   margin-top: 40px;
@@ -58,26 +66,25 @@
   width: 100%;
   text-align: center;
 }
-
 .word-row{
   display:inline-block;
-  height: 70px;
   width: 100%;
   text-align: center;
+  margin-top: 14px;
   margin:auto;
 }
-
 .letter-tile{
   display:inline-block;
   font-size: 36px;
   max-width: 60px;
   max-height:60px;
-  margin: 3px;
   height: 60px;
   width:60px;
+  margin: 3px;
   line-height:60px;
   border: 1px solid black;
   border-radius: 5px;
+  background-color: white;
   user-select: none;
 }
 
@@ -89,17 +96,10 @@
   background-color: d4d4d4;
 }
 
-.wrong {
-  background-color: #878787;
-}
-.letter-tile.close {
-  background-color: #ebb14d;
-}
-.letter-tile.correct {
-  background-color: #66b068;
-}
+
 
 .keyboard {
+  z-index: 3;
   position:relative;
   margin:auto;
   width:100%;
@@ -113,7 +113,7 @@ ul.keyboard-row {
   display:inline-block;
   height: 60px;
   width: 100%;
-  width: 500px;
+  width: 100%;
 }
 li.keyboard-button {
   display:inline-block;
@@ -122,7 +122,7 @@ li.keyboard-button {
   height: 60px;
   margin: 0px;
 }
-li.keyboard-button div.border{
+li.keyboard-button div.border {
   cursor: pointer;
   position: fixed;
   border: 1px solid black;
@@ -134,6 +134,7 @@ li.keyboard-button div.border{
   margin-top: 3px;
   margin-left: 5px;
   line-height: 50px;
+  background-color: white;
 }
 li.keyboard-button div.border:hover {
   width:50px;
@@ -141,4 +142,50 @@ li.keyboard-button div.border:hover {
   line-height: 55px;
   margin:0px;
   font-size: 180%;
+}
+.wrong {
+  background-color: #878787;
+}
+li.keyboard-button div.border.wrong {
+  background-color: #878787;
+}
+.letter-tile.close {
+  background-color: #ebb14d;
+}
+.letter-tile.correct {
+  background-color: #66b068;
+}
+
+@media (min-width: 320px) {
+  .keyboard{
+    padding-left: 0px;
+  }
+  .board{
+    height: 55%;
+    padding-left: 80px;
+  }
+  .letter-tile{
+    font-size: 26px;
+    height: 50px;
+    width:50px;
+    line-height:50px;
+    margin: 2px;
+  }
+}
+@media (min-width: 600px) {
+  .keyboard{
+
+    padding-left: 0px;
+  }
+  .board{
+    height: 60%;
+    padding-left: 0px;
+  }
+  .letter-tile{
+    font-size: 36px;
+    height: 60px;
+    width:60px;
+    line-height:60px;
+    margin: 3px;
+  }
 }
