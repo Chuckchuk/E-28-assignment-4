@@ -3,8 +3,34 @@ div.definition {
   z-index: 1;
   position:fixed;
   width:30%;
-  height: 80%;
-  top: 0px;
+  height: 60%;
+  top: 50px;
+  border: 1px solid black;
+  border-radius: 10px;
+  overflow-wrap: break-word;
+  visibility:hidden;
+}
+div.definition.show{
+  visibility:visible;
+}
+
+div.definition .guess-word{
+  position:relative;
+  font-size: 30px;
+  text-align: center;
+  text-decoration: underline;
+}
+div.definition .part-of-speech{
+  font-size: 20px;
+  text-align: left;
+  text-decoration: underline;
+  padding-left: 4px;
+}
+div.definition .def-text {
+  font-size: 15px;
+  text-align: left;
+  text-decoration: none;
+  padding-left: 8px;
 }
 
 .DEBUG {
@@ -66,11 +92,17 @@ div.definition {
   width: 100%;
   text-align: center;
 }
+.board.def-shown{
+  height: 60%;
+  width: auto;
+  margin-left: 0%;
+  margin-right: 0;
+}
 .word-row{
   display:inline-block;
   width: 100%;
   text-align: center;
-  margin-top: 14px;
+  height: 70px;
   margin:auto;
 }
 .letter-tile{
@@ -96,8 +128,6 @@ div.definition {
   background-color: d4d4d4;
 }
 
-
-
 .keyboard {
   z-index: 3;
   position:relative;
@@ -111,7 +141,7 @@ ul.keyboard-row {
   margin:0;
   padding:0;
   display:inline-block;
-  height: 60px;
+  height: auto;
   width: 100%;
   width: 100%;
 }
@@ -143,6 +173,18 @@ li.keyboard-button div.border:hover {
   margin:0px;
   font-size: 180%;
 }
+li.keyboard-button.keyboard-button-large {
+  font-size: 15px;
+  width: 70px;
+}
+li.keyboard-button.keyboard-button-large div.border{
+  width: 60px;
+}
+li.keyboard-button.keyboard-button-large div.border:hover{
+  width: 70px;
+  font-size: 120%;
+}
+
 .wrong {
   background-color: #878787;
 }
@@ -156,13 +198,67 @@ li.keyboard-button div.border.wrong {
   background-color: #66b068;
 }
 
-@media (min-width: 320px) {
+div.new-game{
+  user-select: none;
+  cursor: pointer;
+  position:fixed;
+  bottom: -20px;
+  right: 30px;
+  font-size: 20px;
+  height: 80px;
+  width: auto;
+  padding: 5px;
+  border: 1px solid black;
+  border-radius: 6px;
+  background-color: #36a612;
+  line-height: 40px;
+  visibility: hidden;
+}
+div.new-game.show{
+  visibility: visible;
+}
+
+
+@media (min-width: 440px) {
+  div.definition {
+    width:30%;
+    height: 55%;
+  }
+  .messages.def-shown {
+    margin-left: 35%;
+    width: 60%;
+  }
+  .messages{
+    font-size: 20px;
+  }
   .keyboard{
     padding-left: 0px;
   }
-  .board{
-    height: 55%;
-    padding-left: 80px;
+  li.keyboard-button {
+    font-size: 20px;
+    width: 42px;
+    height: 46px;
+  }
+  li.keyboard-button div.border {
+    width: 33px;
+    height: 38px;
+    margin: 0px;
+    margin-top: 2px;
+    margin-left: 3px;
+    line-height: 38px;
+  }
+  li.keyboard-button div.border:hover {
+    width:40px;
+    height:44px;
+    line-height: 44px;
+  }
+  .board.def-shown{
+    width: auto;
+    margin-left: 32%;
+    margin-right: 0;
+  }
+  .word-row{
+    height: 65px;
   }
   .letter-tile{
     font-size: 26px;
@@ -173,13 +269,45 @@ li.keyboard-button div.border.wrong {
   }
 }
 @media (min-width: 600px) {
+  div.definition {
+    width:30%;
+    height: 60%;
+  }
+  .messages.def-shown {
+    margin-left: 33%;
+    width: 57%;
+  }
+  .messages{
+    font-size: 25px;
+  }
   .keyboard{
-
     padding-left: 0px;
   }
-  .board{
-    height: 60%;
-    padding-left: 0px;
+  li.keyboard-button {
+    font-size: 24px;
+    width: 50px;
+    height: 60px;
+  }
+  li.keyboard-button div.border {
+    width: 40px;
+    height: 50px;
+    margin: 0px;
+    margin-top: 3px;
+    margin-left: 5px;
+    line-height: 50px;
+  }
+  li.keyboard-button div.border:hover {
+    width:50px;
+    height:55px;
+    line-height: 55px;
+  }
+  .board.def-shown{
+    width: auto;
+    margin-left: 24%;
+    margin-right: 0;
+  }
+  .word-row{
+    height: 70px
   }
   .letter-tile{
     font-size: 36px;
@@ -188,4 +316,23 @@ li.keyboard-button div.border.wrong {
     line-height:60px;
     margin: 3px;
   }
+}
+@media (min-width: 800px) {
+  div.definition {
+    width:27%;
+    height: 60%;
+  }
+  .messages.def-shown {
+    margin-left: auto;
+    width: 50%;
+  }
+  .messages{
+    font-size: 30px;
+  }
+  .board.def-shown{
+    width: auto;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
 }
