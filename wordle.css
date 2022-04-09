@@ -1,0 +1,144 @@
+
+
+.DEBUG {
+  cursor: pointer;
+  position: fixed;
+  width: auto;
+  height: 17px;
+  top: 0px;
+  padding: 5px;
+  font-size: 20px;
+  text-align: center;
+  margin:auto;
+  margin-top: -20px;
+  padding-top: 20px;
+  padding-bottom: 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background-color: gray;
+  user-select: none;
+}
+.DEBUG:hover{
+  background-color: #adadad;
+}
+
+.messages {
+  position: relative;
+  width: 50%;
+  height: 30px;
+  font-size: 30px;
+  text-align: center;
+  margin:auto;
+  margin-top: -20px;
+  padding-top: 20px;
+  padding-bottom: 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  user-select: none;
+}
+.messages.hide{
+  transition: opacity 3s ease-in-out;
+  opacity: 0;
+}
+
+.messages.mistake {
+  background-color: #fca4ad;
+  color: #f24154;
+}
+.messages.praise {
+  background-color: #8ae36d;
+  color: #36a612;
+}
+
+.board {
+  position:relative;
+  margin:auto;
+  margin-top: 40px;
+  height: 60%;
+  width: 100%;
+  text-align: center;
+}
+
+.word-row{
+  display:inline-block;
+  height: 70px;
+  width: 100%;
+  text-align: center;
+  margin:auto;
+}
+
+.letter-tile{
+  display:inline-block;
+  font-size: 36px;
+  max-width: 60px;
+  max-height:60px;
+  margin: 3px;
+  height: 60px;
+  width:60px;
+  line-height:60px;
+  border: 1px solid black;
+  border-radius: 5px;
+  user-select: none;
+}
+
+.letter-tile.unlocked:hover{
+  cursor: pointer;
+  background-color: #136C5E;
+}
+.letter-tile.selected {
+  background-color: d4d4d4;
+}
+
+.wrong {
+  background-color: #878787;
+}
+.letter-tile.close {
+  background-color: #ebb14d;
+}
+.letter-tile.correct {
+  background-color: #66b068;
+}
+
+.keyboard {
+  position:relative;
+  margin:auto;
+  width:100%;
+  text-align: center;
+  user-select: none;
+}
+ul.keyboard-row {
+  list-style-type: none;
+  margin:0;
+  padding:0;
+  display:inline-block;
+  height: 60px;
+  width: 100%;
+  width: 500px;
+}
+li.keyboard-button {
+  display:inline-block;
+  font-size: 24px;
+  width: 50px;
+  height: 60px;
+  margin: 0px;
+}
+li.keyboard-button div.border{
+  cursor: pointer;
+  position: fixed;
+  border: 1px solid black;
+  border-radius: 4px;
+  text-align: center;
+  width: 40px;
+  height: 50px;
+  margin: 0px;
+  margin-top: 3px;
+  margin-left: 5px;
+  line-height: 50px;
+}
+li.keyboard-button div.border:hover {
+  width:50px;
+  height:55px;
+  line-height: 55px;
+  margin:0px;
+  font-size: 180%;
+}

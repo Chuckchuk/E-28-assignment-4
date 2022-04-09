@@ -1,0 +1,781 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Wordle</title>
+  <link rel="stylesheet" href="wordle.css">
+  <script src="https://code.jquery.com/jquery-3.5.0.js"></script> 
+
+  <!-- <script type="text/javascript" src="./five_letter_words.json"></script> -->
+  <script  language="javascript">
+
+    //Include the database I generated with 5 letter English Words
+    /*********
+     * Using this Method is faster 
+     * and the best API I found to get a random word of X length had a limited free option
+     * I am instead using a free API to verify if words are real, and I can also use that
+     * API to get the definitions of the words.
+     * 
+     * I generated this list myself using "generateFiveLetterList.js" from a free JSON file with
+     * 370k English Words. 
+     **  https://github.com/dwyl/english-words/blob/master/words_dictionary.json
+     * Used the javascript file to parse the long list and make a new JSON of an Array of 5 letter words.
+     */
+    //var fiveLetterWords = fetch('./five_letter_words.json').then(response => { return response.json });
+
+    /*##############################*
+     *         ROUND OBJECT         *
+     *##############################*/
+    class Round {
+      constructor(){
+        this.guessWord = null;
+        this.attemptWord = null;
+        this.attempt = 0;
+        //Letter Accuracy
+        this.letterAccuracy = ['-','-','-','-','-'];
+        //List of Incorrect Letters
+        this.wrongLetters = [];
+        // //Letters that the player used that are in the word but not in the right place;
+        // this.closeLetters = [];
+        // //Letters that the player used in the correct place
+        // this.correctLetters = [];
+      }
+      /**
+       * Generate a random Word
+       *  - If the word is valid:
+       *    - Return the new word.
+       *  - Otherwise retry
+      */
+      async generateRandomWord() {
+        var foundWord = false;
+        while (!foundWord){
+          var randomInt = Math.floor(Math.random() * five_letter_words.length);
+          var guessWord = new Word(WORD_LENGTH);
+          //Set the word to a Random Word from the List
+          guessWord.setWord(five_letter_words[randomInt]);
+          // guessWord.setWord("jiffy");
+          //Check if that word is valid
+          if(await checkIsWord(guessWord)){
+            foundWord = true;
+            this.guessWord = guessWord;
+            return true;
+          }
+        } 
+        return false;
+      }
+      /***
+       * Check Attempt
+       *  :Will Check if the word is valid
+       *  - If there Aren't enough letters
+       *    - Display that there needs to be more letters
+       *  - If it's a valid word:
+       *    - calculate and store:
+       *      - Correct
+       *      - Incorrect
+       *      - and Misplaced Words
+       *    - Slowly Reveal the results
+       *      - Reveal in Keyboard
+       *    - If (correct Word):
+       *      - Move to the Next Attempt
+       *      - Otherwise Go to Win State
+       *  - If the word is not valid
+       *    - Display that the word is not valid
+       */
+      async checkAttempt(){
+        if (this.attemptWord.isFull()){
+          if(await checkIsWord(this.attemptWord)){
+            // Calculate the Words
+            this.setWordAccuracy();
+            console.log(this.letterAccuracy);
+            // Slowly reveal the results
+            revealRowAccuracy();
+            // Move to the Next Attempt If Not All Correct
+            if (this.guessWord.str == this.attemptWord.str) {
+              this.winRound();
+            }
+            else {
+              this.nextAttempt();
+            }
+          }
+          // If not a word
+          else{
+            displayMsg("WordNotValid");
+          }
+        }
+        else{
+          displayMsg("WordNotFull");
+        }
+      }
+      /***
+       * Set the Word Accuracy
+       *  - If the letter Matches 
+       *    -Add it to correctLetters
+       *  - If the letter is in the word but in the wrong position:
+       *    - Add it to CloseLetters
+       *?   - Check for duplicate letters
+       *  - If the letter is in neither
+       *    - Add it to wrongLetters
+       */
+      setWordAccuracy(){
+        console.log(this.attemptWord);
+        this.letterAccuracy = ['-','-','-','-','-'];
+        var triedWord = this.attemptWord.str.split('');
+        var trueWord = this.guessWord.str.split('');
+        // If Correct Spot:
+        //   Fully Check Correct Slots FIRST
+        for(let i = 0; i < trueWord.length; i++){
+          if(triedWord[i] == trueWord[i]){
+            this.letterAccuracy[i] = "correct";
+            trueWord[i] = "0";
+          }
+        }
+        for(let i = 0; i < trueWord.length; i++){
+          for(let j = 0; j < trueWord.length; j++){
+            //If not the same spot, but another spot:
+            if(j != i && triedWord[i] == trueWord[j]){
+              this.letterAccuracy[i] = "close";
+              trueWord[j] = "0";
+            }
+          }
+        }
+        for(let i = 0; i < this.letterAccuracy.length; i++){
+          if(this.letterAccuracy[i] == "-"){
+            this.letterAccuracy[i] = "wrong";
+            this.wrongLetters.push(triedWord[i]);
+          }
+        }
+        // for(let i = 0; i < trueWord.length; i++){
+        //   var letterCorrect = false;
+        //   var letterClose = false;
+        //   //If Correct Spot
+        //   if(triedWord[i] == trueWord[i]){
+        //     this.letterAccuracy[i] = "correct";
+        //     trueWord[i] = "0";
+        //     letterCorrect = true;
+        //   }
+        //   for(let j = 0; j < trueWord.length; j++){
+        //     //If not the same spot, but another spot:
+        //     if(j != i && triedWord[i] == trueWord[j]){
+        //       this.letterAccuracy[i] = "close";
+        //       trueWord[j] = 0;
+        //       letterClose = true;
+        //     }
+        //   }
+        //   if(!letterClose && !letterCorrect){
+        //     this.letterAccuracy[i] = "wrong";
+        //     this.wrongLetters.push(triedWord[i]);
+        //   }
+        // }
+      }
+      /**
+       * Set Attempt
+       *  - Set board elements of the appropriate attempt to 'unlocked'
+       *  - Lock all other attempts
+       *  - Set the Selected Tile
+       *  - Create a New Word for the attempt
+       */
+      setAttempt(){
+        for(let i = 0; i < WORD_ATTEMPTS; i++){
+          let HTML_currentTileRow = document.querySelectorAll(".attempt_" + i);
+          if(i == this.attempt){
+            HTML_currentTileRow.forEach(function(tile){
+              tile.classList.add("unlocked");
+            });
+          }
+          else{
+            HTML_currentTileRow.forEach(function(tile){
+              tile.classList.remove("unlocked");
+            });
+          }
+          var HTML_currentTile = document.getElementById("a"+this.attempt+"l0");
+          selectTile(HTML_currentTile);
+          // HTML_currentTile.classList.add("selected");
+          // selected_tile = HTML_currentTile.id;
+        }
+        // Create a New Word for the Attempt
+        this.attemptWord = new Word(WORD_LENGTH);
+      }
+      nextAttempt(){
+        this.attempt += 1;
+        this.setAttempt();
+      }
+      /***
+       * Win Round
+       *  If the Guess is Correct:
+       *  - Congratulate player
+       *  - Lock the Board
+       *  - Show Word and Definition
+       *  - Ask if they want to play again
+       */
+      winRound(){
+        console.log("WON THE ROUND");
+        displayMsg("WinState");
+      }
+
+    }
+
+
+    /*##############################*
+     *         WORD OBJECT          *
+     *##############################*/
+    class Word {
+      constructor(length){
+        this.length = length;
+        //Initialize Array to all '0' (Since numbers aren't allowed in any words)
+        this.arr = [];
+        for(let i = 0; i < this.length; i++){
+          this.arr[i] = '-';
+        }
+        this.str = "\\NULL\\";
+        // this.isWord = false;
+        this.definition = {};
+      }
+      setLetter(letter, pos){
+        this.arr[pos] = letter.toLowerCase();
+        this.stringify();
+      }
+      removeLetter(pos){
+        this.arr[pos] = '-';
+        this.stringify();
+      }
+      async setWord(str){
+        if(str.length == this.length){
+          this.str = str.toLowerCase();
+          for(let i = 0; i < this.length; i++){
+            this.arr[i] = str[i].toLowerCase();
+          }
+        }
+        else {
+          console.error("Not an Appropriate Word Length");
+        }
+      }
+      stringify(){
+        this.str = "";
+        for(let i = 0; i < this.length; i++){
+          this.str += this.arr[i];
+        }
+      }
+      isFull(){
+        for(let i = 0; i < this.length; i++){
+          if(this.arr[i] == '-'){
+            return false;
+          }
+        }
+        return true;
+      }
+      show(){
+        let msg = "WORD: " + this.str + " | "
+        for(let i = 0; i < this.length; i++){
+          msg += "["+ i +"]:";
+          msg += (this.arr[i] == '-') ? '-' : this.arr[i];
+          msg += " ";
+        }
+        msg += this.isFull() ? "| Full" : "| Not Full";
+        return msg;
+      } 
+    }
+
+
+
+
+    //CONSTANTS
+    var WORD_LENGTH = 5;
+    var WORD_ATTEMPTS = 6;
+
+    //Global HTML
+    var HTML_board;
+
+    //Global Vars
+    var five_letter_words = null;
+
+
+
+    /**********************************
+     *         Startup Code           *
+     **********************************/
+
+    //On Load
+    window.onload = async function(){
+      createBoard(WORD_LENGTH, WORD_ATTEMPTS);
+      createKeyboard();
+      five_letter_words =  JSON.parse(await readWordListFile());
+      // console.log(five_letter_words[3]);
+      //Test Word
+      // testWords();
+      createNewRound();
+
+    }//End of On Load
+
+    /***
+     * Key Listeners
+     *  Listen for:
+     *  - Letter Keys A - Z
+     *  - Left and Right
+     *  - Backspace
+     *  - Enter
+     */
+    window.addEventListener("keydown", function (event){
+      // If Keys A - Z
+      if((event.keyCode >= 65 && event.keyCode <= 90) ) {
+        placeLetter(event.keyCode);
+      }
+      // If Key <LEFT ARROW>
+      else if(event.keyCode == 37){
+        selectLeft();
+      }  
+      // If Key <RIGHT ARROW>
+      else if(event.keyCode == 39) {
+        selectRight();
+      }
+      // If Key <BACKSPACE>
+      else if(event.keyCode == 8) {
+        deleteLetter();
+      }
+      // If Key <ENTER>
+      else if(event.keyCode == 13){
+        round.checkAttempt();
+      }
+
+    });
+
+    function readWordListFile() {
+      var req = fetch('./five_letter_words.json')
+      .then(response => response.text())
+      .then( data => {
+        console.log("Fetched File Successfully");
+        return data; 
+      })
+      .catch(error => {
+            console.error(error);
+            console.log("FOUND ERROR");
+      });
+      return req;
+    } 
+    
+    function createBoard(x, y){
+      HTML_board = document.querySelector(".board");
+      // h = height (y)
+      // w = width  (x)
+      let board_string = "";
+      for (let h = 0; h < y; h++){
+        board_string += "<div class='word-row row-attempt_"+h+"'>";
+        for(let w = 0; w < x; w++){
+          board_string += "<span class='letter-tile attempt_"+h+" letter_"+w+"' id='a"+h+"l"+w+"'>&nbsp</span>";
+        }
+        board_string += "</div>";
+      }
+      HTML_board.innerHTML = board_string;
+
+      var HTML_letterTile = document.querySelectorAll(".letter-tile");
+      HTML_letterTile.forEach(function(tile){
+        tile.addEventListener("click", clickTile);
+      })
+    }
+
+    function createKeyboard(){
+      console.log("MADE IT TO KEYBOARD");
+      var keyboard_rows = 3;
+      var HTML_keyboard = document.querySelector(".keyboard");
+      var keys = [
+        ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+        ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+        ["enter",'z', 'x', 'c', 'v', 'b', 'n', 'm',"delete"]
+      ]
+      var str = "";
+      for(let i = 0; i < keyboard_rows; i++){
+        str += "<ul class='keyboard-row keyboard-row_"+i+"'>";
+        for(let j = 0; j < keys[i].length; j++){
+          if(keys[i][j] == "delete" || keys[i][j] == "enter"){
+            //str += "<li class='keyboard-button' id'"+keys[i][j]+"_key'><div class='border'>"+keys[i][j].toUpperCase()+"</div></li>"
+          }
+          else{
+            str += "<li class='keyboard-button'><div class='border keyboard-button-inner'"
+                   + " id='key_"+keys[i][j]+"'>"
+                   + keys[i][j].toUpperCase()+"</div></li>"
+          }
+        }
+        str += "</ul>";
+      }
+      HTML_keyboard.innerHTML = str;
+      var HTML_letterTile = document.querySelectorAll(".keyboard-button-inner");
+      HTML_letterTile.forEach(function(key){
+        key.addEventListener("click", clickKey);
+      })
+    }
+    
+
+
+
+
+
+
+    /**********************************
+     *           Round Code           *
+     **********************************/
+    /**
+     *  1. Create a New Round 
+     *  2. Generate the Random Word
+     *  3. Set the attempt #
+     *    - Set the corresponding Tiles to Unlocked
+     *    - Set the "selected_tile"
+     *    - Create a New Word for the attempt
+     */
+
+    //Global Round Variables
+    var round;
+    var selected_tile;
+
+
+    async function createNewRound() {
+      round = new Round();
+      await round.generateRandomWord();
+      console.log("THIS ROUND'S WORD: " + round.guessWord.str);
+
+      initSelected();
+      round.setAttempt();
+
+    }
+    /***
+     * Initialize Selected
+     *  - Initialize the selected tiles
+     */
+     function initSelected(){
+      selected_tile = "a0l0";
+      var HTML_toSelect = document.getElementById(selected_tile);
+      HTML_toSelect.classList.add("selected");
+    }
+
+
+    function clickKey(){
+      if(this.id == "enter_key"){
+
+      }
+      else if(this.id == "delete_key"){
+        deleteLetter();
+      }
+      else{
+        var key = this.innerHTML;
+        console.log("KEY: " + key + " CODE: " + key.charCodeAt(0));
+        placeLetter(key.charCodeAt(0));
+      }
+    }
+    /***
+     * Place Letter
+     *  - Set the Letter for the Word Object
+     *  - Set the Visual Tile to have the Letter
+     *  - Move the "Selected Tile" to be the next tile
+     */
+    function placeLetter(letterCode){
+      // Set the Letter of the Word Object
+      let letter = String.fromCharCode(letterCode);
+      var letterPos = selected_tile.charAt(3);
+      round.attemptWord.setLetter(letter, letterPos);
+      // Set the Visual
+      var HTML_selectedTile = document.getElementById(selected_tile);
+      HTML_selectedTile.innerHTML = letter;
+      // Move the Selected tile to the Next Tile
+      selectRight();
+    }
+
+
+    // Pass the clicked tile to "selectTile"
+    function clickTile(){
+      selectTile(this);
+    }
+    /***
+     * DeleteLetter
+     *  - Clear current letter
+     *  - Shift Left
+     */
+    function deleteLetter(){
+      var letterPos = selected_tile.charAt(3);
+      if(round.attemptWord.str[letterPos] == '-'){
+        selectLeft();
+        round.attemptWord.setLetter('-', letterPos - 1);
+      }
+      else{
+        round.attemptWord.setLetter('-', letterPos);
+      }
+      var HTML_selectedTile = document.getElementById(selected_tile);
+      HTML_selectedTile.innerHTML = "&nbsp";
+      console.log(round.attemptWord.str);
+    }
+
+    /***
+     * Select the Previous Tile
+     */
+     function selectLeft(){
+      var letterPos = selected_tile.charAt(3);
+      if(parseInt(letterPos) > 0){
+        var nextTile = "a"+ round.attempt +"l"+ --letterPos;
+        var HTML_nextTile = document.getElementById(nextTile);
+        selectTile(HTML_nextTile);
+      }
+    }
+    /***
+     * Select the Next Tile
+     */
+    function selectRight(){
+      var letterPos = selected_tile.charAt(3);
+      if(parseInt(letterPos) < WORD_LENGTH - 1){
+        var nextTile = "a"+ round.attempt +"l"+ ++letterPos;
+        //console.log("POS: " + letterPos + " TILE: " + nextTile);
+        var HTML_nextTile = document.getElementById(nextTile);
+        selectTile(HTML_nextTile);
+      }
+    }
+    /***
+     * Select Tile
+     *  If a Tile is clicked or a letter is placed
+     *  - Clear the previously selected tile
+     *  - Make the new tile the currently selected tile.
+     */
+    function selectTile(HTML_tile){
+      //If it's in the Correct Row
+      if(round.attempt < WORD_ATTEMPTS && HTML_tile.classList.contains("attempt_" + round.attempt)){
+        var HTML_prevSelected = document.querySelector(".selected");
+        HTML_prevSelected.classList.remove("selected");
+        HTML_tile.classList.add("selected");
+
+        selected_tile = HTML_tile.id;
+        //console.log(selected_tile);
+      }
+    }
+
+
+    /***
+     * Reveal Row Accuracy
+     *  - With a Delay, Show each Tile's Status in the most recent attempt
+     */
+    function revealRowAccuracy() {
+      var delayAMT = 190;
+      var delay = delayAMT;
+      var attempt = round.attempt;
+      for(let i = 0; i < WORD_LENGTH; i++){
+        setTimeout(function(){ revealTile(round.letterAccuracy[i], i, attempt); }, delay);
+        delay += delayAMT;
+      }
+      setTimeout(revealKeyboard, delay);
+    }
+    function revealTile(expr, pos, atmpt){
+      var HTML_tile = document.getElementById("a"+atmpt+"l"+pos);
+      HTML_tile.classList.add(expr);
+      console.log("FOUND A " + expr + " TILE");
+    }
+    function revealKeyboard(){
+      round.wrongLetters.forEach(function(l) {
+        let HTML_key = document.getElementById("key_" + l.toLowerCase());
+        HTML_key.classList.add("wrong");
+      });
+    }
+
+
+    /***
+     * Check Is Word
+     *  Utilizes the Dictionary API to check if a word is real
+     *  - If a word isn't in the API, then it'll return a 404 with a JSON
+     *     including a readable "title" 
+     *  - Otherwise, I confirm it and add the definition to the Word Obj
+     */
+    async function checkIsWord(word){
+      var res = fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + word.str)
+        .then(res => res.text())
+        .then (data => {
+          data = JSON.parse(data);
+          //IF NO DEFINITIONS FOUND
+          if (data.title == "No Definitions Found"){
+            console.log("Word:"+word.str+" | IS NOT A RECOGNIZED WORD");
+            return false;
+          }
+          else{
+            console.log(data);
+            console.log("Word:"+word.str+" | IS A WORD");
+            //Set the Definitions
+            word.definition = {};
+            let i = 0;
+            //for(i; i < data.length; i++){
+            for(let j = 0; j < data[i].meanings.length; j++){
+              let key = data[i].meanings[j].partOfSpeech;
+              word.definition[key] = [];
+              for(let k = 0; k < data[i].meanings[j].definitions.length ; k++){
+                word.definition[key][k] = data[i].meanings[j].definitions[k].definition;
+              }
+            } 
+            console.log(word.definition);
+            //}
+            return true;
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          console.log("FOUND ERROR");
+        });
+      return res;
+    }
+
+
+
+    function displayMsg(code){
+      var HTML_message = document.querySelector(".messages");
+      var msg = "";
+      var type = "";
+      switch (code){
+        case "WordNotValid":
+          msg = round.attemptWord.str.toUpperCase() + " is not a valid word";
+          type = "mistake";
+          break;
+        case "WordNotFull":
+          msg = "All Letters Must be Filled In";
+          type = "mistake";
+          break;
+        case "WinState":
+          attempt = round.attempt + 1;
+          msg = "Congratulations! Attempts: " + attempt;
+          type = "praise"
+          break;
+        default:
+          console.error("Got an Invalid Message Code");
+      }
+      HTML_message.innerHTML = msg;
+      HTML_message.classList.remove("mistake","praise","hide");
+      HTML_message.classList.add(type);
+      setTimeout(clearMsg,4000);
+    }
+    function clearMsg(){
+      var HTML_message = document.querySelector(".messages");
+      HTML_message.classList.add("hide");
+    }
+
+
+
+
+
+
+    // async function createGuessWord(){
+
+    //   var randomWord = new Word(5);
+    //   //Keep Generating words until one is found with 5 letters
+    //   foundWord = false;
+    //   while(!foundWord){
+    //     let word = "";
+    //     await getRandomWord(word);
+
+    //     console.log(word);
+    //     if(word.length == 5){
+
+    //     }
+    //   }
+    // }
+
+    // async function getRandomWord(){
+    //   req = fetch("https://random-word-api.herokuapp.com/word?number=1")
+    //     .then(res => res.text())
+    //     .then(data =>{
+    //       console.log(data);
+    //     })
+    //   return req;
+    // }
+
+    
+
+
+    //Function for doing tests on Word Objects
+    // async function testWords(){
+    //   test1 = new Word(WORD_LENGTH);
+    //   test1.setWord('Spare');
+
+    //   test2 = new Word(WORD_LENGTH);
+    //   test2.setLetter('A',1);
+
+    //   console.log(test1.show());
+    //   console.log(test2.show());
+
+    //   let isWord = [];
+    //   isWord[0] = await checkWord(test1);
+    //   isWord[1] = await checkWord(test2);
+
+    //   isWord.forEach(function(c){
+    //     if (c){
+    //       console.log("REAL WORD");
+    //     }
+    //     else{
+    //       console.log("FAKE WORD");
+    //     }
+    //   })
+      
+    //   // return new Promise(function(success, fail) {
+    //   //   if( checkWord(word)){
+    //   //     console.log("REAL WORD");
+    //   //   }
+    //   //   else{
+    //   //     console.log("FAKE WORD");
+    //   //   }
+    //   // });
+    // }
+
+    // async function checkWord(word){
+    //   var req = new XMLHttpRequest();
+    //   req.open("GET","https://api.dictionaryapi.dev/api/v2/entries/en/" + word.str);
+    //   req.onreadystatechange = function(){
+    //     if (req.readyState == 4){
+    //       console.log(req);
+    //       if (req.status == 404){
+    //         console.log("NOT A WORD");
+    //         return false;
+    //       }
+    //       else {
+    //         return true;
+    //       }
+    //     }
+    //   }
+    //   req.send();
+    // }
+
+
+      /*******************************
+       *      Helper Functions       *
+       *******************************/
+
+      // Got this Helper Function at: 
+      //  https://stackoverflow.com/questions/1431094/how-do-i-replace-a-character-at-a-particular-index-in-javascript 
+      function replaceAt(str,index,chr) {
+        if(index > str.length-1) return str;
+        return str.substring(0,index) + chr + str.substring(index+1);
+      }
+
+      /*******************************
+       *        Test Functions       *
+       *******************************/
+      //Function for doing tests on Word Objects and Dictionary API
+      async function testWords(){
+      let test1 = new Word(WORD_LENGTH);
+      test1.setWord('spark');
+
+      let test2 = new Word(WORD_LENGTH);
+      test2.setLetter('A',1);
+
+      console.log(test1.show());
+      console.log(test2.show());
+
+      test1IsWord = await checkIsWord(test1);
+      test2IsWord = await checkIsWord(test2);
+
+      if(test1IsWord){
+        console.log("VALUE SET TO 'IS A WORD'");
+      }
+      else{
+        console.error(test1.str + " should be considered a word");
+      }
+    }
+
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="messages"></div>
+    <div class="board"></div>
+    <div class="keyboard"></div>
+    <div class="DEBUG">Debug</div>
+  </div>
+
+</body>
+</html>
