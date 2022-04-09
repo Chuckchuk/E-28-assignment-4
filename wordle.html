@@ -181,6 +181,9 @@
       winRound(){
         console.log("WON THE ROUND");
         displayMsg("WinState");
+        ROUND_STATE = "WIN";
+        setDefinitionVisibility(true);
+        setNextRoundVisibility(true);
       }
 
     }
@@ -254,11 +257,17 @@
 
     //Global HTML
     var HTML_board;
+    var HTML_definition; 
+    var HTML_message;
 
     //Global Vars
+    var DEBUG_STATE = false;
+    var ROUND_STATE = "START";
     var five_letter_words = null;
 
-
+    //Global Round Variables
+    var round;
+    var selected_tile;
 
     /**********************************
      *         Startup Code           *
@@ -266,13 +275,19 @@
 
     //On Load
     window.onload = async function(){
+      HTML_definition = document.querySelector(".definition");
+      HTML_board = document.querySelector(".board");
+      HTML_message = document.querySelector(".messages");
+
+
       createBoard(WORD_LENGTH, WORD_ATTEMPTS);
       createKeyboard();
+      createButtons();
       five_letter_words =  JSON.parse(await readWordListFile());
       //Test Word
       // testWords();
       createNewRound();
-
+      
     }//End of On Load
 
     /***
@@ -285,19 +300,19 @@
      */
     window.addEventListener("keydown", function (event){
       // If Keys A - Z
-      if((event.keyCode >= 65 && event.keyCode <= 90) ) {
+      if(ROUND_STATE == "PLAYING" && (event.keyCode >= 65 && event.keyCode <= 90) ) {
         placeLetter(event.keyCode);
       }
       // If Key <LEFT ARROW>
-      else if(event.keyCode == 37){
+      else if(ROUND_STATE == "PLAYING" && event.keyCode == 37){
         selectLeft();
       }  
       // If Key <RIGHT ARROW>
-      else if(event.keyCode == 39) {
+      else if(ROUND_STATE == "PLAYING" && event.keyCode == 39) {
         selectRight();
       }
       // If Key <BACKSPACE>
-      else if(event.keyCode == 8) {
+      else if(ROUND_STATE == "PLAYING" && event.keyCode == 8) {
         deleteLetter();
       }
       // If Key <ENTER>
@@ -321,6 +336,15 @@
       return req;
     } 
     
+    function createButtons(){
+      //DEBUG
+      var HTML_DEBUG = document.querySelector(".DEBUG");
+      HTML_DEBUG.addEventListener("click", toggleDEBUG);
+      //NEXT ROUND
+      var HTML_newRound = document.querySelector(".new-game");
+      HTML_newRound.addEventListener("click", createNewRound);
+    }
+
     function createBoard(x, y){
       HTML_board = document.querySelector(".board");
       let board_string = "";
@@ -353,7 +377,7 @@
         str += "<ul class='keyboard-row keyboard-row_"+i+"'>";
         for(let j = 0; j < keys[i].length; j++){
           if(keys[i][j] == "delete" || keys[i][j] == "enter"){
-            //str += "<li class='keyboard-button' id'"+keys[i][j]+"_key'><div class='border'>"+keys[i][j].toUpperCase()+"</div></li>"
+            str += "<li class='keyboard-button keyboard-button-large'><div class='border keyboard-button-inner' id='"+keys[i][j]+"_key'>"+keys[i][j].toUpperCase()+"</div></li>"
           }
           else{
             str += "<li class='keyboard-button'><div class='border keyboard-button-inner'"
@@ -379,7 +403,7 @@
     /**********************************
      *           Round Code           *
      **********************************/
-    /**
+    /***
      *  1. Create a New Round 
      *  2. Generate the Random Word
      *  3. Set the attempt #
@@ -387,20 +411,16 @@
      *    - Set the "selected_tile"
      *    - Create a New Word for the attempt
      */
-
-    //Global Round Variables
-    var round;
-    var selected_tile;
-
-
     async function createNewRound() {
+      ROUND_STATE = "START";
+      clearBoard();
+      initSelected();
       round = new Round();
       await round.generateRandomWord();
+      createDefinitionVisuals();
       console.log("THIS ROUND'S WORD: " + round.guessWord.str);
-
-      initSelected();
       round.setAttempt();
-
+      ROUND_STATE = "PLAYING";
     }
     /***
      * Initialize Selected
@@ -411,11 +431,33 @@
       var HTML_toSelect = document.getElementById(selected_tile);
       HTML_toSelect.classList.add("selected");
     }
+    /***
+     * Clear the Board
+     */
+    function clearBoard(){
+      if(!DEBUG_STATE){
+        setDefinitionVisibility(false);
+      }
+      setNextRoundVisibility(false);
+      var HTML_selected = document.querySelectorAll(".selected");
+      HTML_selected.forEach(
+        function(s) {s.classList.remove('selected');
+      });
+      var HTML_tiles = document.querySelectorAll(".letter-tile");
+      HTML_tiles.forEach(function(t){
+        t.innerHTML = "&nbsp"
+        t.classList.remove('wrong','correct','close');
+      });
+    }
 
 
+    /***
+     * IF a Key is Clicked:
+     *  - redirect from here
+     */
     function clickKey(){
       if(this.id == "enter_key"){
-
+        round.checkAttempt();
       }
       else if(this.id == "delete_key"){
         deleteLetter();
@@ -581,7 +623,6 @@
 
 
     function displayMsg(code){
-      var HTML_message = document.querySelector(".messages");
       var msg = "";
       var type = "";
       switch (code){
@@ -607,27 +648,94 @@
       setTimeout(clearMsg,4000);
     }
     function clearMsg(){
-      var HTML_message = document.querySelector(".messages");
       HTML_message.classList.add("hide");
     }
 
+    function toggleDEBUG(){
+      if(!DEBUG_STATE){
+        setDefinitionVisibility(true);
+        HTML_definition.classList.add('show');
+        DEBUG_STATE = true;
+      }
+      else{
+        if(ROUND_STATE != "WIN"){
+          setDefinitionVisibility(false);
+        }
+        DEBUG_STATE = false;
+      }
+    }
+    /***
+     * Create Definition Visuals
+     *  - Word centered at top
+     *  - List of:
+     *    - Part of Speech
+     *      - Up to two definitions
+     *    - Part of Speech
+     *      - ETC.
+     */
+    function createDefinitionVisuals(){
+      var str = "";
+      var word = round.guessWord;
+      var def  = round.guessWord.definition;
+      str += "<div class='guess-word'>"+word.str.charAt(0).toUpperCase() + word.str.slice(1) +"</div>"
+      console.log("# of P_O_S: " + def.noun);
 
-      /*******************************
-       *      Helper Functions       *
-       *******************************/
-
-      // Got this Helper Function at: 
-      //  https://stackoverflow.com/questions/1431094/how-do-i-replace-a-character-at-a-particular-index-in-javascript 
-      function replaceAt(str,index,chr) {
-        if(index > str.length-1) return str;
-        return str.substring(0,index) + chr + str.substring(index+1);
+      for (const s in def) {
+        console.log(s + " has: " + def[s][0]);
+        str += "<div class='part-of-speech'>"+ s +":<br /></div>"
+        for(let i = 0; i < def[s].length && i < 3; i++){
+          let numeration = i + 1;
+          str += "<div class='def-text def_"+i+"'>" + numeration + ". " +def[s][i]+"</div>";
+        }
       }
 
-      /*******************************
-       *        Test Functions       *
-       *******************************/
-      //Function for doing tests on Word Objects and Dictionary API
-      async function testWords(){
+      for(let i = 0; i < def; i++){
+        var poSpeech = def[i].charAt(0).toUpperCase() +  def[i].slice(1); 
+        str += "<div class='part-of-speech'>"+ poSpeech +":<br /></div>"
+        console.log("P_O_S: " + poSpeech);
+      }
+      HTML_definition.innerHTML = str;
+    }
+
+    function setDefinitionVisibility(visible){
+      if(visible){
+        HTML_definition.classList.add('show');
+        HTML_board.classList.add('def-shown');
+        HTML_message.classList.add('def-shown');
+      }
+      else{
+        HTML_definition.classList.remove('show');
+        HTML_board.classList.remove('def-shown');
+        HTML_message.classList.remove('def-shown');
+      }
+    }
+    function setNextRoundVisibility(visible){
+      var HTML_nextRound = document.querySelector(".new-game");
+      if(visible){
+        HTML_nextRound.classList.add('show');
+      }
+      else{
+        HTML_nextRound.classList.remove('show');
+      }
+    }
+
+
+    /*******************************
+     *      Helper Functions       *
+     *******************************/
+
+    // Got this Helper Function at: 
+    //  https://stackoverflow.com/questions/1431094/how-do-i-replace-a-character-at-a-particular-index-in-javascript 
+    function replaceAt(str,index,chr) {
+      if(index > str.length-1) return str;
+      return str.substring(0,index) + chr + str.substring(index+1);
+    }
+
+    /*******************************
+     *        Test Functions       *
+     *******************************/
+    //Function for doing tests on Word Objects and Dictionary API
+    async function testWords(){
       let test1 = new Word(WORD_LENGTH);
       test1.setWord('spark');
 
@@ -657,6 +765,7 @@
     <div class="keyboard"></div>
     <div class="DEBUG">Debug</div>
     <div class="definition"></div>
+    <div class="new-game">Next Round</div>
   </div> 
 
 </body>
